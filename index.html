@@ -163,6 +163,7 @@ const RUN_STEPS     = 8;
 const STEP_H        = FLOOR_H / (RUN_STEPS * 2);
 const LANDING_X_W   = STAIR_SPAN * 0.16;  // X width of turning landing platform
 const STAIR_CENTER_X = ROW_A_X - BALCONY_W/2;  // X center aligned with Row A outer
+const STAIR_CENTER_X_B = ROW_B_X + BALCONY_W/2; // X center aligned with Row B outer (mirrored)
 
 // Shop layout — 5 shops in 82ft: 5×15ft + 4×0.6ft partitions = 75 + 2.4 = 77.4ft, ~2.3ft margin each end
 const SHOP_LEN    = 15;
@@ -408,6 +409,19 @@ for (let fl = 0; fl < 3; fl++) {
   scene.add(grp);
 }
 
+// Stair group (container for all stairs)
+const stairGroup = new THREE.Group();
+
+// Stair colors
+const STEP_COLOR = 0xc0a040;
+const RAIL_COLOR = 0xb09030;
+const ENCL_COLOR = 0xa08828;
+
+const S_LEFT  = STAIR_CENTER_X - STAIR_SPAN/2;
+const S_RIGHT = STAIR_CENTER_X + STAIR_SPAN/2;
+const S_MID   = STAIR_CENTER_X;
+const RUN_SPAN = (STAIR_SPAN - LANDING_X_W) / 2;
+
 // ============================================
 // ENTRANCE ARCHES (clear walkway openings)
 // ============================================
@@ -417,6 +431,56 @@ for (let side of [-1, 1]) {
   scene.add(box(1.5, FLOOR_H*2, 1.5, 0xaa8866, 1,  WALKWAY_W/2 + 0.5, FLOOR_H, az));
   scene.add(box(WALKWAY_W + 3, 1.5, 2, 0xbb9977, 1, 0, FLOOR_H*2, az));
   scene.add(box(WALKWAY_W - 2, 1, 0.3, 0xddcc88, 0.9, 0, FLOOR_H*2 - 2, az + side*0.5));
+}
+
+// ============================================
+// ENTRANCE PLATFORMS (floors 1, 2, 3)
+// Positioned OUTSIDE the building end wall, centered on the walkway (X: -WALKWAY_W/2 to +WALKWAY_W/2).
+// Solid slab floor + aesthetic railing bars (posts + top rail only, no solid walls).
+// Depth matches STAIR_Z_DEPTH so it aligns flush with the staircases on both sides.
+// ============================================
+{
+  const platW     = WALKWAY_W;                    // matches walkway width exactly
+  const platDepth = STAIR_Z_DEPTH;                // same Z depth as the staircases
+  const platCX    = 0;                            // centered on walkway (X=0)
+  const PLAT_H    = 0.3;
+  const RH        = 3.0;                          // railing height
+  const POST_GAP  = 2.0;                          // spacing between railing posts
+
+  for (let side of [-1, 1]) {
+    const wallZ  = side * LAND_L/2;
+    const outDir = side;
+    // Platform sits outside: from wallZ outward by platDepth
+    const platZ  = wallZ + outDir * platDepth/2;
+    const outerZ = wallZ + outDir * platDepth;    // road-facing edge
+    const innerZ = wallZ;                          // building-facing edge
+
+    for (let fl = 1; fl <= 3; fl++) {
+      const py = fl * FLOOR_H;
+
+      // ── SOLID FLOOR SLAB ─────────────────────────────────────
+      scene.add(box(platW, PLAT_H, platDepth, 0xc8a850, 1, platCX, py + PLAT_H/2, platZ));
+
+      // ── RAILING BARS (road-facing outer edge) ────────────────
+      // Top horizontal rail
+      scene.add(box(platW, 0.15, 0.15, RAIL_COLOR, 1, platCX, py + RH, outerZ));
+      // Mid horizontal rail
+      scene.add(box(platW, 0.15, 0.15, RAIL_COLOR, 1, platCX, py + RH*0.5, outerZ));
+      // Vertical posts every POST_GAP
+      for (let px = -platW/2; px <= platW/2; px += POST_GAP) {
+        scene.add(box(0.15, RH, 0.15, RAIL_COLOR, 1, px, py + RH/2, outerZ));
+      }
+
+      // ── RAILING BARS (left side, X = -platW/2) ───────────────
+      scene.add(box(0.15, RH, platDepth, RAIL_COLOR, 1, -platW/2, py + RH/2, platZ));
+
+      // ── RAILING BARS (right side, X = +platW/2) ──────────────
+      scene.add(box(0.15, RH, platDepth, RAIL_COLOR, 1,  platW/2, py + RH/2, platZ));
+
+      // ── RAILING BARS (inner edge, building-facing) ───────────
+      scene.add(box(platW, 0.15, 0.15, RAIL_COLOR, 0.5, platCX, py + RH, innerZ));
+    }
+  }
 }
 
 // ============================================
@@ -437,21 +501,6 @@ for (let side of [-1, 1]) {
 // Z footprint: STAIR_Z_DEPTH (5.5ft) beyond building end wall
 // ============================================
 
-const stairGroup = new THREE.Group();
-const STEP_COLOR = 0xc0a040;
-const RAIL_COLOR = 0xb09030;
-const ENCL_COLOR = 0xa08828;
-
-// Stair X layout:
-//  Left end of Run 1  = STAIR_CENTER_X - STAIR_SPAN/2
-//  Landing center     = STAIR_CENTER_X
-//  Right end of Run 2 = STAIR_CENTER_X + STAIR_SPAN/2
-const S_LEFT  = STAIR_CENTER_X - STAIR_SPAN/2;
-const S_RIGHT = STAIR_CENTER_X + STAIR_SPAN/2;
-const S_MID   = STAIR_CENTER_X;
-// Each run occupies roughly half the span minus landing
-const RUN_SPAN = (STAIR_SPAN - LANDING_X_W) / 2;  // X width of each run
-
 // buildStair — proper U-shape switchback
 //
 // Viewed from ABOVE (plan view), +Z end wall example:
@@ -467,7 +516,10 @@ const RUN_SPAN = (STAIR_SPAN - LANDING_X_W) / 2;  // X width of each run
 // enterFromRight=false: Run1 starts S_LEFT  walks right; Run2 starts S_RIGHT walks left
 // This alternates each floor so exit of one flight = entry of next.
 
-function buildStair(endSide, floorIndex, enterFromRight) {
+function buildStair(parent, endSide, floorIndex, enterFromRight, centerX) {
+  const sLeft  = centerX - STAIR_SPAN/2;
+  const sRight = centerX + STAIR_SPAN/2;
+  const sMid   = centerX;
   const by     = floorIndex * FLOOR_H;
   const wallZ  = endSide * LAND_L/2;                        // building end face Z
   const outDir = endSide;                                    // direction toward road
@@ -481,9 +533,9 @@ function buildStair(endSide, floorIndex, enterFromRight) {
   const zRun2  = wallZ + outDir * (RUN_Z/2);                        // building-side run centre
 
   // X start/end of each run
-  const run1StartX = enterFromRight ? S_RIGHT : S_LEFT;
+  const run1StartX = enterFromRight ? sRight : sLeft;
   const run1DirX   = enterFromRight ? -1 : +1;
-  const run2StartX = enterFromRight ? S_LEFT  : S_RIGHT;
+  const run2StartX = enterFromRight ? sLeft  : sRight;
   const run2DirX   = enterFromRight ? +1 : -1;
   const runSpan    = RUN_STEPS * treadW;
 
@@ -491,87 +543,85 @@ function buildStair(endSide, floorIndex, enterFromRight) {
   for (let s = 0; s < RUN_STEPS; s++) {
     const stepX = run1StartX + run1DirX * (s + 0.5) * treadW;
     const stepY = by + (s + 0.5) * STEP_H;
-    stairGroup.add(box(treadW, STEP_H, RUN_Z, STEP_COLOR, 1, stepX, stepY, zRun1));
+    parent.add(box(treadW, STEP_H, RUN_Z, STEP_COLOR, 1, stepX, stepY, zRun1));
   }
 
   // ── LANDING (mid-height, flat platform spanning full Z depth) ─
-  // Spans the full Z footprint (both lanes + gap between them)
-  // so people can stand, turn around, and step onto Run 2
   const halfH   = by + FLOOR_H/2;
-  const landZ   = wallZ + outDir * (STAIR_Z_DEPTH / 2);  // center of total Z footprint
-  stairGroup.add(box(STAIR_SPAN, 0.35, STAIR_Z_DEPTH, STEP_COLOR, 1, S_MID, halfH, landZ));
+  const landZ   = wallZ + outDir * (STAIR_Z_DEPTH / 2);
+  parent.add(box(STAIR_SPAN, 0.35, STAIR_Z_DEPTH, STEP_COLOR, 1, sMid, halfH, landZ));
 
   // ── RUN 2 (upper half-flight, building-side lane) ──────────
-  // Starts FROM the landing (S_MID) and climbs toward the opposite corner
   for (let s = 0; s < RUN_STEPS; s++) {
-    const stepX = S_MID + run2DirX * (s + 0.5) * treadW;
+    const stepX = sMid + run2DirX * (s + 0.5) * treadW;
     const stepY = by + FLOOR_H/2 + (s + 0.5) * STEP_H;
-    stairGroup.add(box(treadW, STEP_H, RUN_Z, STEP_COLOR, 1, stepX, stepY, zRun2));
+    parent.add(box(treadW, STEP_H, RUN_Z, STEP_COLOR, 1, stepX, stepY, zRun2));
   }
 
   // ── ARRIVAL SLAB at top of Run 2 ───────────────────────────
-  const arrX = S_MID + run2DirX * RUN_STEPS * treadW;
-  stairGroup.add(box(LANDING_X_W, 0.35, RUN_Z, STEP_COLOR, 1, arrX, by + FLOOR_H, zRun2));
+  const arrX = sMid + run2DirX * RUN_STEPS * treadW;
+  parent.add(box(LANDING_X_W, 0.35, RUN_Z, STEP_COLOR, 1, arrX, by + FLOOR_H, zRun2));
 
   // ── ENCLOSURE WALLS ────────────────────────────────────────
   const encH   = FLOOR_H + 0.4;
-  const zOuter = wallZ + outDir * STAIR_Z_DEPTH;   // road-facing outer edge
-  const zInner = wallZ + outDir * 0.2;              // building-facing inner edge
+  const zOuter = wallZ + outDir * STAIR_Z_DEPTH;
+  const zInner = wallZ + outDir * 0.2;
 
-  // Building-facing wall (inner) — only left of walkway entrance gap
-  const gapLeft = -WALKWAY_W/2 - 0.5;
-  const seg1W   = gapLeft - S_LEFT;
-  if (seg1W > 0)
-    stairGroup.add(wall(seg1W, encH, WALL_T, ENCL_COLOR, wallOpacity,
-      S_LEFT + seg1W/2, by + encH/2, zInner));
+  // Building-facing wall (inner)
+  parent.add(wall(STAIR_SPAN, encH, WALL_T, ENCL_COLOR, wallOpacity,
+    sMid, by + encH/2, zInner));
 
   // Road-facing wall (outer)
-  stairGroup.add(wall(STAIR_SPAN, encH, WALL_T, ENCL_COLOR, wallOpacity,
-    S_MID, by + encH/2, zOuter));
+  parent.add(wall(STAIR_SPAN, encH, WALL_T, ENCL_COLOR, wallOpacity,
+    sMid, by + encH/2, zOuter));
 
-  // Left side wall (outer X edge)
-  stairGroup.add(wall(WALL_T, encH, STAIR_Z_DEPTH, ENCL_COLOR, wallOpacity,
-    S_LEFT, by + encH/2, wallZ + outDir * STAIR_Z_DEPTH/2));
+  // Left side wall
+  parent.add(wall(WALL_T, encH, STAIR_Z_DEPTH, ENCL_COLOR, wallOpacity,
+    sLeft, by + encH/2, wallZ + outDir * STAIR_Z_DEPTH/2));
 
-  // Right side wall (inner X edge toward walkway)
-  stairGroup.add(wall(WALL_T, encH, STAIR_Z_DEPTH, ENCL_COLOR, wallOpacity,
-    S_RIGHT, by + encH/2, wallZ + outDir * STAIR_Z_DEPTH/2));
+  // Right side wall
+  parent.add(wall(WALL_T, encH, STAIR_Z_DEPTH, ENCL_COLOR, wallOpacity,
+    sRight, by + encH/2, wallZ + outDir * STAIR_Z_DEPTH/2));
 
-  // Divider wall between Run 1 and Run 2 (separates the two Z lanes)
-  // Runs from landing Z inward, full height
-  stairGroup.add(wall(STAIR_SPAN, encH * 0.5, WALL_T, ENCL_COLOR, wallOpacity * 0.7,
-    S_MID, by + encH*0.25, wallZ + outDir * (RUN_Z + LANDING_Z)));
+  // Divider wall between runs
+  parent.add(wall(STAIR_SPAN, encH * 0.5, WALL_T, ENCL_COLOR, wallOpacity * 0.7,
+    sMid, by + encH*0.25, wallZ + outDir * (RUN_Z + LANDING_Z)));
 
-  // ── HANDRAILS (open side of each run) ──────────────────────
+  // ── HANDRAILS ──────────────────────────────────────────────
   const RH     = 2.8;
-  // Run 1 handrail on road-facing open side (outermost Z)
   const railZ1 = wallZ + outDir * (STAIR_Z_DEPTH - 0.2);
-  stairGroup.add(box(runSpan, 0.2, 0.2, RAIL_COLOR, 1,
+  parent.add(box(runSpan, 0.2, 0.2, RAIL_COLOR, 1,
     run1StartX + run1DirX * runSpan/2, by + FLOOR_H/2 + RH*0.3, railZ1));
   for (let s = 0; s <= RUN_STEPS; s += 2) {
     const t = s / RUN_STEPS;
-    stairGroup.add(box(0.2, RH, 0.2, RAIL_COLOR, 1,
+    parent.add(box(0.2, RH, 0.2, RAIL_COLOR, 1,
       run1StartX + run1DirX * t * runSpan, by + t * FLOOR_H/2 + RH/2, railZ1));
   }
 
-  // Run 2 handrail on building-facing open side (innermost Z) — starts from landing
   const railZ2 = wallZ + outDir * 0.3;
-  stairGroup.add(box(runSpan, 0.2, 0.2, RAIL_COLOR, 1,
-    S_MID + run2DirX * runSpan/2, by + FLOOR_H + RH*0.3, railZ2));
+  parent.add(box(runSpan, 0.2, 0.2, RAIL_COLOR, 1,
+    sMid + run2DirX * runSpan/2, by + FLOOR_H + RH*0.3, railZ2));
   for (let s = 0; s <= RUN_STEPS; s += 2) {
     const t = s / RUN_STEPS;
-    stairGroup.add(box(0.2, RH, 0.2, RAIL_COLOR, 1,
-      S_MID + run2DirX * t * runSpan, by + FLOOR_H/2 + t * FLOOR_H/2 + RH/2, railZ2));
+    parent.add(box(0.2, RH, 0.2, RAIL_COLOR, 1,
+      sMid + run2DirX * t * runSpan, by + FLOOR_H/2 + t * FLOOR_H/2 + RH/2, railZ2));
   }
 }
 
-// Alternating entry corner each floor for continuous corner-to-corner path:
-// fl 0: right→left  (enterFromRight=true)
-// fl 1: left→right  (enterFromRight=false)  ← starts where fl0 ended
-// fl 2: right→left  (enterFromRight=true)   ← starts where fl1 ended
-for (let side of [-1, 1])
-  for (let fl = 0; fl < 3; fl++)
-    buildStair(side, fl, true);
+// Build stairs on BOTH Row A (left) and Row B (right) at each building end
+for (let side of [-1, 1]) {
+  for (let fl = 0; fl < 3; fl++) {
+
+    if (side === 1) {
+      // FRONT SIDE → Row A (LEFT side)
+      buildStair(stairGroup, side, fl, true, STAIR_CENTER_X);
+    } else {
+      // BACK SIDE → Row B (RIGHT side)
+      buildStair(stairGroup, side, fl, false, STAIR_CENTER_X_B);
+    }
+
+  }
+}
 
 scene.add(stairGroup);
 
@@ -625,6 +675,33 @@ for (let bz = -17; bz <= -6; bz += 3)
 // Dimension lines
 scene.add(box(LAND_W, 0.05, 0.15, 0xffff00, 0.5, 0, 0.5, -LAND_L/2 - STAIR_Z_DEPTH - 8, false));
 scene.add(box(0.15, 0.05, LAND_L, 0xffff00, 0.5, -LAND_W/2 - 5, 0.5, 0, false));
+
+// ============================================
+// WATER TANK (30% rooftop)
+// ============================================
+
+const tankWidth  = LAND_W * 0.3;
+const tankDepth  = LAND_L * 0.3;
+const tankHeight = 6;
+
+const tankX = 0;
+const tankZ = LAND_L * 0.2; // place toward one side (adjust if needed)
+
+// Base platform
+scene.add(box(tankWidth + 2, 0.5, tankDepth + 2, 0x444444, 1,
+  tankX, roofY + 0.5, tankZ));
+
+// Tank body
+scene.add(box(tankWidth, tankHeight, tankDepth, 0x2f2f2f, 1,
+  tankX, roofY + tankHeight/2 + 0.5, tankZ));
+
+// Top cap
+scene.add(box(tankWidth, 0.5, tankDepth, 0x1f1f1f, 1,
+  tankX, roofY + tankHeight + 0.75, tankZ));
+
+// Small pipe
+scene.add(box(0.5, 2, 0.5, 0x888888, 1,
+  tankX - tankWidth/3, roofY + tankHeight + 2, tankZ));
 
 // ============================================
 // ORBIT CONTROLS
