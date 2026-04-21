@@ -376,9 +376,14 @@ for (let fl = 0; fl < 3; fl++) {
     // Inner wall (shared with bathroom A) — with door gap in center
     grp.add(wall(WALL_T, wh, unitLen * 0.4, 0xa070c0, wallOpacity, innerA, wy, -unitLen * 0.3));
     grp.add(wall(WALL_T, wh, unitLen * 0.4, 0xa070c0, wallOpacity, innerA, wy,  unitLen * 0.3));
-    // End walls
-    grp.add(wall(roomDepth, wh, WALL_T, 0xa070c0, wallOpacity, roomACX, wy, -unitLen/2));
-    grp.add(wall(roomDepth, wh, WALL_T, 0xa070c0, wallOpacity, roomACX, wy,  unitLen/2));
+    // End walls — front end (Z=-unitLen/2) has door opening, back end solid
+    {
+      const dW = 3.0, dH = 7.0, seg = (roomDepth - dW) / 2;
+      grp.add(wall(seg, wh, WALL_T, 0xa070c0, wallOpacity, roomACX - dW/2 - seg/2, wy, -unitLen/2));
+      grp.add(wall(seg, wh, WALL_T, 0xa070c0, wallOpacity, roomACX + dW/2 + seg/2, wy, -unitLen/2));
+      grp.add(wall(dW, wh - dH, WALL_T, 0xa070c0, wallOpacity, roomACX, by + dH + (wh-dH)/2 + 0.2, -unitLen/2));
+    }
+    grp.add(wall(roomDepth, wh, WALL_T, 0xa070c0, wallOpacity, roomACX, wy, unitLen/2));
     // Floor color
     grp.add(box(roomDepth - 0.5, 0.1, unitLen - 0.5, 0xc09070, 0.4, roomACX, by + 0.3, 0, false));
     // Furniture — bed
@@ -392,8 +397,14 @@ for (let fl = 0; fl < 3; fl++) {
     grp.add(wall(WALL_T, wh, unitLen, 0x9068b0, wallOpacity, outerB, wy, 0));
     grp.add(wall(WALL_T, wh, unitLen * 0.4, 0x9068b0, wallOpacity, innerB, wy, -unitLen * 0.3));
     grp.add(wall(WALL_T, wh, unitLen * 0.4, 0x9068b0, wallOpacity, innerB, wy,  unitLen * 0.3));
+    // End walls — back end (Z=+unitLen/2) has door opening, front end solid
     grp.add(wall(roomDepth, wh, WALL_T, 0x9068b0, wallOpacity, roomBCX, wy, -unitLen/2));
-    grp.add(wall(roomDepth, wh, WALL_T, 0x9068b0, wallOpacity, roomBCX, wy,  unitLen/2));
+    {
+      const dW = 3.0, dH = 7.0, seg = (roomDepth - dW) / 2;
+      grp.add(wall(seg, wh, WALL_T, 0x9068b0, wallOpacity, roomBCX - dW/2 - seg/2, wy,  unitLen/2));
+      grp.add(wall(seg, wh, WALL_T, 0x9068b0, wallOpacity, roomBCX + dW/2 + seg/2, wy,  unitLen/2));
+      grp.add(wall(dW, wh - dH, WALL_T, 0x9068b0, wallOpacity, roomBCX, by + dH + (wh-dH)/2 + 0.2, unitLen/2));
+    }
     grp.add(box(roomDepth - 0.5, 0.1, unitLen - 0.5, 0xb08070, 0.4, roomBCX, by + 0.3, 0, false));
     grp.add(box(5, 1.0, 7, 0x8B6050, 1, roomBCX + 3, by + 0.7, -unitLen/2 + 5));
     grp.add(box(5, 0.35, 1, 0x6B4030, 1, roomBCX + 3, by + 1.3, -unitLen/2 + 1.8));
