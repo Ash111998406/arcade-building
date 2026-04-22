@@ -8,40 +8,63 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { overflow: hidden; background: #1a1a2e; font-family: 'Segoe UI', sans-serif; }
   canvas { display: block; }
-  #ui-panel {
-    position: fixed; top: 20px; left: 20px;
+
+  /* ── TOGGLE BUTTONS (always visible) ── */
+  .toggle-btn {
+    position: fixed; z-index: 200;
+    width: 40px; height: 40px; border-radius: 10px;
     background: rgba(10,10,30,0.85); backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-    padding: 20px; color: #e0e0e0; z-index: 100; min-width: 240px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.18); color: #e0e0e0;
+    font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5); transition: background 0.2s, border-color 0.2s;
+    -webkit-tap-highlight-color: transparent;
   }
-  #ui-panel h2 { font-size: 16px; font-weight: 600; margin-bottom: 14px; color: #fff; letter-spacing: 0.5px; }
-  .control-group { margin-bottom: 12px; }
-  .control-group label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 6px; }
-  .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
-  .btn { padding: 6px 12px; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
-    background: rgba(255,255,255,0.05); color: #ccc; font-size: 12px; cursor: pointer; transition: all 0.2s; }
-  .btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  .toggle-btn:hover, .toggle-btn.open { background: rgba(40,40,80,0.95); border-color: rgba(100,180,255,0.45); }
+  #toggle-controls { top: 16px; left: 16px; }
+  #toggle-legend   { top: 16px; right: 16px; }
+
+  /* ── PANELS ── */
+  #ui-panel, #legend {
+    position: fixed; z-index: 100;
+    background: rgba(10,10,30,0.92); backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+    padding: 16px 18px; color: #e0e0e0;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    /* hidden by default */
+    opacity: 0; pointer-events: none;
+    transform: translateY(-8px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+  #ui-panel.visible, #legend.visible {
+    opacity: 1; pointer-events: auto; transform: translateY(0);
+  }
+  #ui-panel { top: 64px; left: 16px; min-width: 230px; }
+  #legend   { top: 64px; right: 16px; font-size: 12px; }
+
+  #ui-panel h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #fff; letter-spacing: 0.4px; }
+  .control-group { margin-bottom: 11px; }
+  .control-group label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 5px; }
+  .btn-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  .btn { padding: 5px 11px; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px;
+    background: rgba(255,255,255,0.05); color: #ccc; font-size: 12px; cursor: pointer; transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent; }
+  .btn:hover  { background: rgba(255,255,255,0.15); color: #fff; }
   .btn.active { background: rgba(100,180,255,0.25); border-color: rgba(100,180,255,0.5); color: #fff; }
-  #info-panel {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: rgba(10,10,30,0.8); backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
-    padding: 12px 24px; color: #aaa; font-size: 12px; z-index: 100; text-align: center;
-  }
-  #legend {
-    position: fixed; top: 20px; right: 20px;
-    background: rgba(10,10,30,0.85); backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-    padding: 16px 20px; color: #e0e0e0; z-index: 100; font-size: 12px;
-  }
-  #legend h3 { font-size: 13px; margin-bottom: 10px; color: #fff; }
-  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-  .legend-color { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); }
+
+  #legend h3 { font-size: 12px; margin-bottom: 9px; color: #fff; }
+  .legend-item { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+  .legend-color { width: 13px; height: 13px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.2); flex-shrink:0; }
+
+
 </style>
 </head>
 <body>
 
+<!-- Toggle buttons -->
+<button id="toggle-controls" class="toggle-btn" title="Building Controls" onclick="togglePanel('ui-panel','toggle-controls')">⚙️</button>
+<button id="toggle-legend"   class="toggle-btn" title="Legend"            onclick="togglePanel('legend','toggle-legend')">🗺️</button>
+
+<!-- Controls panel (hidden by default) -->
 <div id="ui-panel">
   <h2>🏢 Building Controls</h2>
   <div class="control-group">
@@ -72,6 +95,7 @@
   </div>
 </div>
 
+<!-- Legend panel (hidden by default) -->
 <div id="legend">
   <h3>Legend</h3>
   <div class="legend-item"><div class="legend-color" style="background:#e07850"></div> Shops (Row A)</div>
@@ -79,18 +103,35 @@
   <div class="legend-item"><div class="legend-color" style="background:#70a060"></div> Walkway / Seating</div>
   <div class="legend-item"><div class="legend-color" style="background:#c0a040"></div> Staircases (Row A end)</div>
   <div class="legend-item"><div class="legend-color" style="background:#888860"></div> Ground: Moto Parking</div>
-  <div class="legend-item"><div class="legend-color" style="background:#4a9060"></div> 1F & 3F: Planter Balcony</div>
+  <div class="legend-item"><div class="legend-color" style="background:#4a9060"></div> 1F &amp; 3F: Planter Balcony</div>
   <div class="legend-item"><div class="legend-color" style="background:#a070c0"></div> Residential (3F)</div>
   <div class="legend-item"><div class="legend-color" style="background:#60b0a0"></div> Rooftop Balcony</div>
 </div>
 
-<div id="info-panel">
-  🖱️ Drag to rotate &nbsp;|&nbsp; Scroll to zoom &nbsp;|&nbsp; Right-drag to pan &nbsp;|&nbsp;
-  45ft × 82ft building &nbsp;|&nbsp; Stairs outside ends on Row A side &nbsp;|&nbsp; Planter balconies on 1F + 3F
-</div>
+
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+// ── Panel toggle ──────────────────────────────────────────────
+function togglePanel(panelId, btnId) {
+  const panel = document.getElementById(panelId);
+  const btn   = document.getElementById(btnId);
+  const open  = panel.classList.toggle('visible');
+  btn.classList.toggle('open', open);
+}
+// Tap outside to close
+document.addEventListener('pointerdown', function(e) {
+  for (const [panelId, btnId] of [['ui-panel','toggle-controls'],['legend','toggle-legend']]) {
+    const panel = document.getElementById(panelId);
+    const btn   = document.getElementById(btnId);
+    if (panel.classList.contains('visible') &&
+        !panel.contains(e.target) && !btn.contains(e.target)) {
+      panel.classList.remove('visible');
+      btn.classList.remove('open');
+    }
+  }
+});
+
 // ============================================
 // SCENE SETUP
 // ============================================
@@ -117,50 +158,30 @@ scene.add(fillLight);
 // ============================================
 // DIMENSIONS  (1 unit = 1 foot)
 // ============================================
-const LAND_W  = 45;   // X – breadth (parallel to road)
-const LAND_L  = 82;   // Z – shortened from 90 to 82 to give 4ft stair zones at each end
+const LAND_W  = 45;
+const LAND_L  = 82;
 const FLOOR_H = 11;
 const WALL_T  = 0.4;
 
-// Cross-section of 45ft breadth:
-//  2ft planter balcony | 14ft shops (Row A) | 11ft walkway | 14ft shops (Row B) | 2ft planter balcony  = 43ft
-//  (remaining 2ft shared as wall thickness on outer faces)
-const BALCONY_W  = 2;    // outer planter balcony / ground parking strip width
+const BALCONY_W  = 2;
 const SHOP_DEPTH = 14;
 const WALKWAY_W  = 11;
 
-// Row centers (X)
-const ROW_A_X = -(WALKWAY_W/2 + SHOP_DEPTH/2);   // left row  ≈ -12.5
-const ROW_B_X =  (WALKWAY_W/2 + SHOP_DEPTH/2);   //right row  ≈ +12.5
-const OUTER_A  = ROW_A_X - SHOP_DEPTH/2 - BALCONY_W/2;  // balcony center left
-const OUTER_B  = ROW_B_X + SHOP_DEPTH/2 + BALCONY_W/2;  // balcony center right
+const ROW_A_X = -(WALKWAY_W/2 + SHOP_DEPTH/2);
+const ROW_B_X =  (WALKWAY_W/2 + SHOP_DEPTH/2);
+const OUTER_A  = ROW_A_X - SHOP_DEPTH/2 - BALCONY_W/2;
+const OUTER_B  = ROW_B_X + SHOP_DEPTH/2 + BALCONY_W/2;
 
-// ============================================
-// STAIRCASE ZONE
-// Each end of the building has a 4ft gap beyond the shop block.
-// Stair sits in that gap, aligned with Row A side (left/outer).
-// The stair runs along X (parallel to road), switchback U-shape.
-// It occupies: Z outside ±LAND_L/2, tucked against end walls.
-//
-// Stair footprint:
-//   Z: from ±LAND_L/2 outward to ±(LAND_L/2 + STAIR_Z_DEPTH)
-//   X: centered on ROW_A_X, width = STAIR_SPAN (≈ breadth of row A shop + balcony)
-// ============================================
-const STAIR_Z_DEPTH = 7.0;   // total Z footprint of staircase (both runs + landing)
-const RUN_Z         = 3.0;   // Z width of each run (enough for one person + handrail)
-const LANDING_Z     = 1.0;   // Z depth of the turning landing (thin strip against the wall)
-// Layout in Z (relative to building end wall, going outward toward road):
-//   Zone 1 (building side): Run 2  — Z offset 0      to RUN_Z
-//   Zone 2 (landing):                Z offset RUN_Z   to RUN_Z + LANDING_Z
-//   Zone 3 (road side):    Run 1  — Z offset RUN_Z+LANDING_Z to STAIR_Z_DEPTH
-const STAIR_SPAN    = SHOP_DEPTH + BALCONY_W;  // ~16ft — full X width of Row A + balcony strip
+const STAIR_Z_DEPTH = 7.0;
+const RUN_Z         = 3.0;
+const LANDING_Z     = 1.0;
+const STAIR_SPAN    = SHOP_DEPTH + BALCONY_W;
 const RUN_STEPS     = 8;
 const STEP_H        = FLOOR_H / (RUN_STEPS * 2);
-const LANDING_X_W   = STAIR_SPAN * 0.16;  // X width of turning landing platform
-const STAIR_CENTER_X = ROW_A_X - BALCONY_W/2;  // X center aligned with Row A outer
-const STAIR_CENTER_X_B = ROW_B_X + BALCONY_W/2; // X center aligned with Row B outer (mirrored)
+const LANDING_X_W   = STAIR_SPAN * 0.16;
+const STAIR_CENTER_X = ROW_A_X - BALCONY_W/2;
+const STAIR_CENTER_X_B = ROW_B_X + BALCONY_W/2;
 
-// Shop layout — 5 shops in 82ft: 5×15ft + 4×0.6ft partitions = 75 + 2.4 = 77.4ft, ~2.3ft margin each end
 const SHOP_LEN    = 15;
 const PARTITION_T = 0.6;
 const shopStartZ  = -LAND_L/2 + 2.3;
@@ -209,7 +230,6 @@ for (let side of [-1, 1]) {
     scene.add(box(3, 0.06, 0.3, 0xffffff, 0.7, i, 0.3, rz - 4, false));
     scene.add(box(3, 0.06, 0.3, 0xffffff, 0.7, i, 0.3, rz + 4, false));
   }
-  // Sidewalk between stair zone and road
   scene.add(box(50, 0.25, 3, 0x555555, 1, 0, 0.15, side * (LAND_L/2 + STAIR_Z_DEPTH + 1.5), false));
 }
 
@@ -220,20 +240,16 @@ for (let fl = 0; fl < 3; fl++) {
   const grp = new THREE.Group();
   const by = fl * FLOOR_H;
 
-  // Main building floor slab (narrower than LAND_W so outer balconies are visible)
-  const slabW = WALKWAY_W + SHOP_DEPTH * 2; // 11 + 14 + 14 = 39ft — excludes outer balcony strips
+  const slabW = WALKWAY_W + SHOP_DEPTH * 2;
   grp.add(slab(slabW, LAND_L, fl === 2 ? 0x8a7090 : 0x888880, 0, by, 0));
 
   if (fl < 2) {
-    // ── OUTER STRIPS ──────────────────────────────────────────
     if (fl === 0) {
-      // Ground floor: motorcycle parking on both outer sides
       for (let side of [-1, 1]) {
         const px = side * (WALKWAY_W/2 + SHOP_DEPTH + BALCONY_W/2);
         grp.add(box(BALCONY_W, 0.2, LAND_L - 1, 0x888860, 0.9, px, by + 0.2, 0, false));
         for (let p = -LAND_L/2 + 3; p < LAND_L/2 - 2; p += 5)
           grp.add(box(BALCONY_W - 0.3, 0.06, 0.15, 0xffff88, 0.8, px, by + 0.35, p, false));
-        // Motorcycles
         for (let p = -LAND_L/2 + 4; p < LAND_L/2 - 3; p += 6) {
           grp.add(box(BALCONY_W - 0.4, 1.2, 3.2, 0x444444, 1, px, by + 0.8, p));
           grp.add(box(0.7, 0.3, 1.3, 0x222222, 1, px, by + 1.5, p + 0.3));
@@ -241,21 +257,17 @@ for (let fl = 0; fl < 3; fl++) {
         }
       }
     } else {
-      // 2nd floor (fl=1): wide walkable balcony (5ft) full building length, both outer sides
       const WALK_BAL_W = 5;
       const totalLen = LAND_L - 1 + STAIR_Z_DEPTH * 2;
       for (let side of [-1, 1]) {
         const shopOuterX = side * (WALKWAY_W/2 + SHOP_DEPTH);
         const bpx        = shopOuterX + side * WALK_BAL_W/2;
         const outerRailX = shopOuterX + side * WALK_BAL_W;
-        // Slab
         grp.add(box(WALK_BAL_W, 0.25, totalLen, 0x607850, 1, bpx, by + 0.25, 0, false));
-        // Outer railing — top + mid bars full length, posts within building only
         grp.add(box(0.15, 0.15, totalLen, RAIL_COLOR, 1, outerRailX, by + 3.0, 0));
         grp.add(box(0.15, 0.15, totalLen, RAIL_COLOR, 1, outerRailX, by + 1.5, 0));
         for (let p = -LAND_L/2 + 2; p < LAND_L/2 - 1; p += 2.5)
           grp.add(box(0.15, 3.0, 0.15, RAIL_COLOR, 1, outerRailX, by + 1.5, p));
-        // End railings at building ends — Row B only (Row A has stair access)
         for (let endSide of [-1, 1]) {
           const endZ = endSide * LAND_L/2;
           grp.add(box(WALK_BAL_W, 0.15, 0.15, RAIL_COLOR, 1, bpx, by + 3.0, endZ));
@@ -263,7 +275,6 @@ for (let fl = 0; fl < 3; fl++) {
           for (let px = shopOuterX; Math.abs(px) <= Math.abs(outerRailX) + 0.1; px += side * 1.5)
             grp.add(box(0.15, 3.0, 0.15, RAIL_COLOR, 1, px, by + 1.5, endZ));
         }
-        // Planters along inner edge
         for (let p = -LAND_L/2 + 5; p < LAND_L/2 - 4; p += 8) {
           grp.add(box(1.2, 1.0, 2.5, 0x5a3a1a, 1, shopOuterX + side * 0.8, by + 0.9, p));
           grp.add(box(1.0, 0.7, 2.2, 0x228844, 0.85, shopOuterX + side * 0.8, by + 1.7, p));
@@ -271,65 +282,45 @@ for (let fl = 0; fl < 3; fl++) {
       }
     }
 
-    // ── SHOPS ──────────────────────────────────────────────────
     for (let i = 0; i < 5; i++) {
       const sz = shopCenterZ(i);
       const wh = FLOOR_H - 1.5;
       const wy = by + wh/2 + 0.2;
 
-      // Row A (left) — walkway-facing side left fully open (no door walls)
       const cA = shopColorsA[i];
       const leftEdgeA  = ROW_A_X - SHOP_DEPTH/2;
       const rightEdgeA = ROW_A_X + SHOP_DEPTH/2;
       grp.add(wall(WALL_T, wh, SHOP_LEN, cA, wallOpacity, leftEdgeA, wy, sz));
       grp.add(wall(SHOP_DEPTH, wh, WALL_T, cA, wallOpacity, ROW_A_X, wy, sz - SHOP_LEN/2));
       grp.add(wall(SHOP_DEPTH, wh, WALL_T, cA, wallOpacity, ROW_A_X, wy, sz + SHOP_LEN/2));
-      // NO front wall on rightEdgeA — fully open toward walkway
       grp.add(box(SHOP_DEPTH - 1, 0.08, SHOP_LEN - 1, cA, 0.3, ROW_A_X, by + 0.3, sz, false));
 
-      // Row B (right) — walkway-facing side left fully open (no door walls)
       const cB = shopColorsB[i];
       const leftEdgeB  = ROW_B_X - SHOP_DEPTH/2;
       const rightEdgeB = ROW_B_X + SHOP_DEPTH/2;
       grp.add(wall(WALL_T, wh, SHOP_LEN, cB, wallOpacity, rightEdgeB, wy, sz));
       grp.add(wall(SHOP_DEPTH, wh, WALL_T, cB, wallOpacity, ROW_B_X, wy, sz - SHOP_LEN/2));
       grp.add(wall(SHOP_DEPTH, wh, WALL_T, cB, wallOpacity, ROW_B_X, wy, sz + SHOP_LEN/2));
-      // NO front wall on leftEdgeB — fully open toward walkway
       grp.add(box(SHOP_DEPTH - 1, 0.08, SHOP_LEN - 1, cB, 0.3, ROW_B_X, by + 0.3, sz, false));
     }
 
-    // ── WALKWAY ────────────────────────────────────────────────
     grp.add(box(WALKWAY_W, 0.15, LAND_L - 2, 0x70a060, 0.5, 0, by + 0.25, 0, false));
     for (let z = -LAND_L/2 + 3; z < LAND_L/2 - 2; z += 3)
       grp.add(box(2.5, 0.08, 1.5, 0x88b870, 0.6, 0, by + 0.35, z, false));
 
-    // ── SEATING ────────────────────────────────────────────────
-    // Smaller tables (2ft wide × 6ft long) with benches close in,
-    // leaving clear walking space on both sides of the walkway
     for (let t = 0; t < 3; t++) {
       const tz = -22 + t * 22;
-      // Table top
       grp.add(box(2, 0.25, 6, 0x8B6914, 1, 0, by + 2.8, tz));
-      // Table legs
       for (let lx of [-0.8, 0.8]) for (let lz of [-2.5, 2.5])
         grp.add(box(0.2, 2.5, 0.2, 0x6B4914, 1, lx, by + 1.5, tz + lz));
-      // Benches (one each side, 5ft long, 1.8ft from center)
       for (let s of [-1, 1]) {
         grp.add(box(0.8, 0.15, 5, 0x9B7924, 1, s * 1.8, by + 1.7, tz));
-        // Bench legs
         for (let lz of [-2, 2])
           grp.add(box(0.15, 1.5, 0.15, 0x6B4914, 1, s * 1.8, by + 0.9, tz + lz));
       }
     }
 
   } else {
-    // ── 3RD FLOOR RESIDENTIAL ──────────────────────────────────
-    // Layout (same footprint as floors below):
-    //  [balcony 2ft] [room A 14ft] [bath A 5.5ft | bath B 5.5ft] [room B 14ft] [balcony 2ft]
-    //                              ←──── WALKWAY_W=11ft ────────→
-    // Center dividing wall at X=0 (parallel to road) splits bathrooms
-
-    // Wide walkable balcony on outer edges — same as 1st floor
     {
       const WALK_BAL_W = 5;
       const totalLen = LAND_L - 1 + STAIR_Z_DEPTH * 2;
@@ -356,27 +347,21 @@ for (let fl = 0; fl < 3; fl++) {
       }
     }
 
-    const roomDepth = SHOP_DEPTH;          // 14ft — each residential room width
-    const bathDepth = WALKWAY_W / 2;       // 5.5ft — each bathroom width
+    const roomDepth = SHOP_DEPTH;
+    const bathDepth = WALKWAY_W / 2;
     const unitLen   = LAND_L - 2;
     const wh = FLOOR_H - 1.5;
     const wy = by + wh/2 + 0.2;
 
-    // Outer wall X positions (same as shop outer walls below)
-    const outerA = -(WALKWAY_W/2 + roomDepth);  // = -19.5
-    const outerB =  (WALKWAY_W/2 + roomDepth);  // = +19.5
-    // Inner wall X positions (where room meets bathroom)
-    const innerA = -WALKWAY_W/2;  // = -5.5
-    const innerB =  WALKWAY_W/2;  // = +5.5
+    const outerA = -(WALKWAY_W/2 + roomDepth);
+    const outerB =  (WALKWAY_W/2 + roomDepth);
+    const innerA = -WALKWAY_W/2;
+    const innerB =  WALKWAY_W/2;
 
-    // ── ROOM A (left residential) ──────────────────────────────
-    const roomACX = (outerA + innerA) / 2;  // center X of room A = -12.5
-    // Outer wall
+    const roomACX = (outerA + innerA) / 2;
     grp.add(wall(WALL_T, wh, unitLen, 0xa070c0, wallOpacity, outerA, wy, 0));
-    // Inner wall (shared with bathroom A) — with door gap in center
     grp.add(wall(WALL_T, wh, unitLen * 0.4, 0xa070c0, wallOpacity, innerA, wy, -unitLen * 0.3));
     grp.add(wall(WALL_T, wh, unitLen * 0.4, 0xa070c0, wallOpacity, innerA, wy,  unitLen * 0.3));
-    // End walls — front end (Z=-unitLen/2) has door opening, back end solid
     {
       const dW = 3.0, dH = 7.0, seg = (roomDepth - dW) / 2;
       grp.add(wall(seg, wh, WALL_T, 0xa070c0, wallOpacity, roomACX - dW/2 - seg/2, wy, -unitLen/2));
@@ -384,20 +369,15 @@ for (let fl = 0; fl < 3; fl++) {
       grp.add(wall(dW, wh - dH, WALL_T, 0xa070c0, wallOpacity, roomACX, by + dH + (wh-dH)/2 + 0.2, -unitLen/2));
     }
     grp.add(wall(roomDepth, wh, WALL_T, 0xa070c0, wallOpacity, roomACX, wy, unitLen/2));
-    // Floor color
     grp.add(box(roomDepth - 0.5, 0.1, unitLen - 0.5, 0xc09070, 0.4, roomACX, by + 0.3, 0, false));
-    // Furniture — bed
     grp.add(box(5, 1.0, 7, 0x8B6050, 1, roomACX - 3, by + 0.7, -unitLen/2 + 5));
     grp.add(box(5, 0.35, 1, 0x6B4030, 1, roomACX - 3, by + 1.3, -unitLen/2 + 1.8));
-    // Wardrobe
     grp.add(box(3, 5, 2, 0x705030, 0.95, roomACX + 4, by + 2.5, -unitLen/2 + 2));
 
-    // ── ROOM B (right residential) ─────────────────────────────
-    const roomBCX = (innerB + outerB) / 2;  // center X of room B = +12.5
+    const roomBCX = (innerB + outerB) / 2;
     grp.add(wall(WALL_T, wh, unitLen, 0x9068b0, wallOpacity, outerB, wy, 0));
     grp.add(wall(WALL_T, wh, unitLen * 0.4, 0x9068b0, wallOpacity, innerB, wy, -unitLen * 0.3));
     grp.add(wall(WALL_T, wh, unitLen * 0.4, 0x9068b0, wallOpacity, innerB, wy,  unitLen * 0.3));
-    // End walls — back end (Z=+unitLen/2) has door opening, front end solid
     grp.add(wall(roomDepth, wh, WALL_T, 0x9068b0, wallOpacity, roomBCX, wy, -unitLen/2));
     {
       const dW = 3.0, dH = 7.0, seg = (roomDepth - dW) / 2;
@@ -410,20 +390,12 @@ for (let fl = 0; fl < 3; fl++) {
     grp.add(box(5, 0.35, 1, 0x6B4030, 1, roomBCX + 3, by + 1.3, -unitLen/2 + 1.8));
     grp.add(box(3, 5, 2, 0x705030, 0.95, roomBCX - 4, by + 2.5, -unitLen/2 + 2));
 
-    // ── SHARED BATHROOM BLOCK (center, WALKWAY_W wide) ─────────
-    // Dividing wall runs along X (PARALLEL to road), at Z=0
-    // splits the bathroom block into front half (bath A) and back half (bath B)
     grp.add(wall(WALKWAY_W, wh, WALL_T, 0x607080, wallOpacity, 0, wy, 0));
-
-    // Side walls closing the bathroom block (along Z, at X = ±WALKWAY_W/2)
     grp.add(wall(WALL_T, wh, unitLen, 0x607080, wallOpacity, -WALKWAY_W/2, wy, 0));
     grp.add(wall(WALL_T, wh, unitLen, 0x607080, wallOpacity,  WALKWAY_W/2, wy, 0));
-
-    // End walls
     grp.add(wall(WALKWAY_W, wh, WALL_T, 0x607080, wallOpacity, 0, wy, -unitLen/2));
     grp.add(wall(WALKWAY_W, wh, WALL_T, 0x607080, wallOpacity, 0, wy,  unitLen/2));
 
-    // Bathroom A (front half, Z: -unitLen/2 to 0)
     const bathACX = 0;
     grp.add(box(WALKWAY_W - 0.5, 0.1, unitLen/2 - 0.5, 0x7090b0, 0.5, bathACX, by + 0.3, -unitLen/4, false));
     grp.add(box(1.5, 1.5, 2.0, 0xeeeedd, 0.95, -2, by + 0.9, -unitLen/2 + 3));
@@ -431,7 +403,6 @@ for (let fl = 0; fl < 3; fl++) {
     grp.add(box(1.8, 2.2, 1.5, 0xccddee, 0.9,   2, by + 1.2, -unitLen/2 + 6));
     grp.add(box(3.5, 0.15, 4,  0xaaccdd, 0.6,   0, by + 0.3, -unitLen/4 + 4));
 
-    // Bathroom B (back half, Z: 0 to +unitLen/2)
     const bathBCX = 0;
     grp.add(box(WALKWAY_W - 0.5, 0.1, unitLen/2 - 0.5, 0x70a0b0, 0.5, bathBCX, by + 0.3, unitLen/4, false));
     grp.add(box(1.5, 1.5, 2.0, 0xeeeedd, 0.95,  2, by + 0.9, unitLen/2 - 3));
@@ -440,17 +411,13 @@ for (let fl = 0; fl < 3; fl++) {
     grp.add(box(3.5, 0.15, 4,  0xaaccdd, 0.6,   0, by + 0.3, unitLen/4 - 4));
   }
 
-  // Ceiling slab
   grp.add(slab(LAND_W, LAND_L, 0x777770, 0, by + FLOOR_H, 0));
 
   floors[fl] = grp;
   scene.add(grp);
 }
 
-// Stair group (container for all stairs)
 const stairGroup = new THREE.Group();
-
-// Stair colors
 const STEP_COLOR = 0xc0a040;
 const ENCL_COLOR = 0xa08828;
 
@@ -459,12 +426,7 @@ const S_RIGHT = STAIR_CENTER_X + STAIR_SPAN/2;
 const S_MID   = STAIR_CENTER_X;
 const RUN_SPAN = (STAIR_SPAN - LANDING_X_W) / 2;
 
-// ============================================
-// GROUND FLOOR BATHROOMS
-// Left outer parking strip, centered at Z=0. Fully outside building.
-// innerX = -19.5 flush against shop outer wall, outerX = -24.5.
-// Doors face OUTWARD (-X toward road).
-// ============================================
+// Ground floor bathrooms
 {
   const BATH_L=5, BATH_D=5, BATH_H=8, WT=0.3, doorW=2.0;
   const innerX = -(WALKWAY_W/2 + SHOP_DEPTH);
@@ -493,9 +455,7 @@ const RUN_SPAN = (STAIR_SPAN - LANDING_X_W) / 2;
   scene.add(box(BATH_D+0.6,0.3,totalL+0.6,0x888880,1,bathCX,BATH_H+0.15,0));
 }
 
-// ============================================
-// ENTRANCE ARCHES (clear walkway openings)
-// ============================================
+// Entrance arches
 for (let side of [-1, 1]) {
   const az = side * LAND_L/2;
   scene.add(box(1.5, FLOOR_H*2, 1.5, 0xaa8866, 1, -WALKWAY_W/2 - 0.5, FLOOR_H, az));
@@ -504,9 +464,7 @@ for (let side of [-1, 1]) {
   scene.add(box(WALKWAY_W - 2, 1, 0.3, 0xddcc88, 0.9, 0, FLOOR_H*2 - 2, az + side*0.5));
 }
 
-// ============================================
-// ENTRANCE PLATFORMS (floors 1, 2, 3) + CONNECTOR SLABS + FRONT RAILINGS
-// ============================================
+// Entrance platforms
 {
   const WALK_BAL_W  = 5;
   const platW       = WALKWAY_W;
@@ -515,8 +473,8 @@ for (let side of [-1, 1]) {
   const PLAT_H      = 0.3;
   const RH          = 3.0;
   const POST_GAP    = 2.0;
-  const shopOuterX_L = -(WALKWAY_W/2 + SHOP_DEPTH);  // -19.5
-  const shopOuterX_R =  (WALKWAY_W/2 + SHOP_DEPTH);  // +19.5
+  const shopOuterX_L = -(WALKWAY_W/2 + SHOP_DEPTH);
+  const shopOuterX_R =  (WALKWAY_W/2 + SHOP_DEPTH);
 
   for (let side of [-1, 1]) {
     const wallZ  = side * LAND_L/2;
@@ -527,21 +485,17 @@ for (let side of [-1, 1]) {
 
     for (let fl = 1; fl <= 3; fl++) {
       const py = fl * FLOOR_H;
-
-      // Walkway platform slab
       scene.add(box(platW, PLAT_H, platDepth, 0xc8a850, 1, platCX, py + PLAT_H/2, platZ));
 
       if (fl <= 2) {
-        // Connector slabs bridging walkway platform to side balconies
-        const gapW    = shopOuterX_R - WALKWAY_W/2;       // 14ft each side
-        const gapCX_L = (shopOuterX_L - WALKWAY_W/2) / 2; // -12.5
-        const gapCX_R = (shopOuterX_R + WALKWAY_W/2) / 2; // +12.5
+        const gapW    = shopOuterX_R - WALKWAY_W/2;
+        const gapCX_L = (shopOuterX_L - WALKWAY_W/2) / 2;
+        const gapCX_R = (shopOuterX_R + WALKWAY_W/2) / 2;
         scene.add(box(gapW, PLAT_H, platDepth, 0xc8a850, 1, gapCX_L, py + PLAT_H/2, platZ));
         scene.add(box(gapW, PLAT_H, platDepth, 0xc8a850, 1, gapCX_R, py + PLAT_H/2, platZ));
 
-        // Full-width front railing at outerZ
-        const outerRailX_L = shopOuterX_L - WALK_BAL_W;  // -24.5
-        const outerRailX_R = shopOuterX_R + WALK_BAL_W;  // +24.5
+        const outerRailX_L = shopOuterX_L - WALK_BAL_W;
+        const outerRailX_R = shopOuterX_R + WALK_BAL_W;
         const fullW = outerRailX_R - outerRailX_L;
         scene.add(box(fullW, 0.15, 0.15, RAIL_COLOR, 1, 0, py + RH,       outerZ));
         scene.add(box(fullW, 0.15, 0.15, RAIL_COLOR, 1, 0, py + RH * 0.5, outerZ));
@@ -552,7 +506,6 @@ for (let side of [-1, 1]) {
             scene.add(box(0.15, RH, 0.15, RAIL_COLOR, 1, px, py + RH/2, outerZ));
         }
       } else {
-        // fl=3: simple walkway platform railings only
         scene.add(box(platW, 0.15, 0.15, RAIL_COLOR, 1, platCX, py + RH,       outerZ));
         scene.add(box(platW, 0.15, 0.15, RAIL_COLOR, 1, platCX, py + RH * 0.5, outerZ));
         for (let px = -platW/2; px <= platW/2; px += POST_GAP)
@@ -565,70 +518,32 @@ for (let side of [-1, 1]) {
   }
 }
 
-// ============================================
-// SWITCHBACK STAIRCASES
-// Location: outside the building at each end (Z > LAND_L/2 and Z < -LAND_L/2)
-// Aligned with Row A (left side, negative X)
-// Runs along X (parallel to road) — U-shape switchback
-//
-// Viewed from above (+Z end, looking toward building):
-//
-//   Road side ──────────────────────────────────
-//         [Run 2 upper: travels →  +X ]
-//         [Landing  (against building end wall) ]
-//         [Run 1 lower: travels ←  -X ]
-//   Building end wall (Z = +LAND_L/2) ──────────
-//
-// Both runs span X across STAIR_SPAN (~16ft)
-// Z footprint: STAIR_Z_DEPTH (5.5ft) beyond building end wall
-// ============================================
-
-// buildStair — proper U-shape switchback
-//
-// Viewed from ABOVE (plan view), +Z end wall example:
-//
-//   Building wall  Z=+41 ══════════════════════════
-//   Run 2 (upper)  ←←←←←←  building-side lane (Z: wall to wall+RUN_Z)
-//   Landing        ▓▓▓▓▓▓▓  thin strip at wall end  (Z: RUN_Z to RUN_Z+LANDING_Z)
-//   Run 1 (lower)  →→→→→→→  road-side lane          (Z: RUN_Z+LANDING_Z to STAIR_Z_DEPTH)
-//   Road           Z=+48.5 ══════════════════════════
-//
-// Both runs travel along X (parallel to road).
-// enterFromRight=true:  Run1 starts S_RIGHT walks left;  Run2 starts S_LEFT walks right
-// enterFromRight=false: Run1 starts S_LEFT  walks right; Run2 starts S_RIGHT walks left
-// This alternates each floor so exit of one flight = entry of next.
-
+// Switchback staircases
 function buildStair(parent, endSide, floorIndex, enterFromRight, centerX) {
   const sLeft  = centerX - STAIR_SPAN/2;
   const sRight = centerX + STAIR_SPAN/2;
   const sMid   = centerX;
   const by     = floorIndex * FLOOR_H;
-  const wallZ  = endSide * LAND_L/2;                        // building end face Z
-  const outDir = endSide;                                    // direction toward road
-  const treadW = (STAIR_SPAN - LANDING_X_W) / 2 / RUN_STEPS; // X tread width per step
+  const wallZ  = endSide * LAND_L/2;
+  const outDir = endSide;
+  const treadW = (STAIR_SPAN - LANDING_X_W) / 2 / RUN_STEPS;
 
-  // Z centres of each zone (absolute world coords)
-  // Run 1 is the road-side lane (further from building)
-  // Run 2 is the building-side lane (closer to building)
-  const zRun1  = wallZ + outDir * (RUN_Z + LANDING_Z + RUN_Z/2);   // road-side run centre
-  const zLand  = wallZ + outDir * (RUN_Z + LANDING_Z/2);           // landing centre
-  const zRun2  = wallZ + outDir * (RUN_Z/2);                        // building-side run centre
+  const zRun1  = wallZ + outDir * (RUN_Z + LANDING_Z + RUN_Z/2);
+  const zLand  = wallZ + outDir * (RUN_Z + LANDING_Z/2);
+  const zRun2  = wallZ + outDir * (RUN_Z/2);
 
-  // X start/end of each run
   const run1StartX = enterFromRight ? sRight : sLeft;
   const run1DirX   = enterFromRight ? -1 : +1;
   const run2StartX = enterFromRight ? sLeft  : sRight;
   const run2DirX   = enterFromRight ? +1 : -1;
   const runSpan    = RUN_STEPS * treadW;
 
-  // ── RUN 1 (lower half-flight, road-side lane) ──────────────
   for (let s = 0; s < RUN_STEPS; s++) {
     const stepX = run1StartX + run1DirX * (s + 0.5) * treadW;
     const stepY = by + (s + 0.5) * STEP_H;
     parent.add(box(treadW, STEP_H, RUN_Z, STEP_COLOR, 1, stepX, stepY, zRun1));
   }
 
-  // ── LANDING — outer half only (entrance half removed) ────────
   const halfH      = by + FLOOR_H/2;
   const landZ      = wallZ + outDir * (STAIR_Z_DEPTH / 2);
   const halfLandW  = STAIR_SPAN / 2;
@@ -637,33 +552,27 @@ function buildStair(parent, endSide, floorIndex, enterFromRight, centerX) {
   const zOuter     = wallZ + outDir * STAIR_Z_DEPTH;
   parent.add(box(halfLandW, 0.35, STAIR_Z_DEPTH, STEP_COLOR, 1, halfLandCX, halfH, landZ));
 
-  // Landing safety railings: outer X edge + outer road-facing Z edge
   const RH_land = 2.8;
-  // Railing 1: outer X edge (runs along Z)
   parent.add(box(0.15, 0.15, STAIR_Z_DEPTH, RAIL_COLOR, 1, outerEdgeX, halfH + RH_land,       landZ));
   parent.add(box(0.15, 0.15, STAIR_Z_DEPTH, RAIL_COLOR, 1, outerEdgeX, halfH + RH_land * 0.5, landZ));
   const zS = wallZ + outDir * 0.3, zE = wallZ + outDir * (STAIR_Z_DEPTH - 0.3);
   for (let lz = Math.min(zS,zE); lz <= Math.max(zS,zE); lz += 1.5)
     parent.add(box(0.15, RH_land, 0.15, RAIL_COLOR, 1, outerEdgeX, halfH + RH_land/2, lz));
-  // Railing 2: outer road-facing edge (runs along X of kept half)
   parent.add(box(halfLandW, 0.15, 0.15, RAIL_COLOR, 1, halfLandCX, halfH + RH_land,       zOuter));
   parent.add(box(halfLandW, 0.15, 0.15, RAIL_COLOR, 1, halfLandCX, halfH + RH_land * 0.5, zOuter));
   const xS = enterFromRight ? sLeft : sMid, xE = enterFromRight ? sMid : sRight;
   for (let lx = xS + 0.3; lx <= xE - 0.3; lx += 1.5)
     parent.add(box(0.15, RH_land, 0.15, RAIL_COLOR, 1, lx, halfH + RH_land/2, zOuter));
 
-  // ── RUN 2 (upper half-flight, building-side lane) ──────────
   for (let s = 0; s < RUN_STEPS; s++) {
     const stepX = sMid + run2DirX * (s + 0.5) * treadW;
     const stepY = by + FLOOR_H/2 + (s + 0.5) * STEP_H;
     parent.add(box(treadW, STEP_H, RUN_Z, STEP_COLOR, 1, stepX, stepY, zRun2));
   }
 
-  // ── ARRIVAL SLAB at top of Run 2 ───────────────────────────
   const arrX = sMid + run2DirX * RUN_STEPS * treadW;
   parent.add(box(LANDING_X_W, 0.35, RUN_Z, STEP_COLOR, 1, arrX, by + FLOOR_H, zRun2));
 
-  // ── DIAGONAL HANDRAILS following stair slope ───────────────
   const RH = 2.8;
   function addDiagRail(startX, startY, endX, endY, railZ) {
     const dx = endX - startX, dy = endY - startY;
@@ -679,34 +588,24 @@ function buildStair(parent, endSide, floorIndex, enterFromRight, centerX) {
       parent.add(box(0.15, RH, 0.15, RAIL_COLOR, 1, startX + t*dx, startY + t*dy + RH/2, railZ));
     }
   }
-  // Run 1 diagonal rail
   const railZ1 = wallZ + outDir * (STAIR_Z_DEPTH - 0.2);
   addDiagRail(run1StartX, by, run1StartX + run1DirX * runSpan, by + FLOOR_H/2, railZ1);
-  // Run 2 diagonal rail
   const railZ2 = wallZ + outDir * 0.3;
   addDiagRail(sMid, by + FLOOR_H/2, sMid + run2DirX * runSpan, by + FLOOR_H, railZ2);
 }
 
-// Build stairs on BOTH Row A (left) and Row B (right) at each building end
 for (let side of [-1, 1]) {
   for (let fl = 0; fl < 3; fl++) {
-
     if (side === 1) {
-      // FRONT SIDE → Row A (LEFT side)
       buildStair(stairGroup, side, fl, true, STAIR_CENTER_X);
     } else {
-      // BACK SIDE → Row B (RIGHT side)
       buildStair(stairGroup, side, fl, false, STAIR_CENTER_X_B);
     }
-
   }
 }
-
 scene.add(stairGroup);
 
-// ============================================
-// ROOFTOP BALCONY
-// ============================================
+// Rooftop
 const roofY = 3 * FLOOR_H;
 scene.add(box(LAND_W + 2, 0.6, LAND_L + 2, 0x554444, 1, 0, roofY + 0.3, 0));
 
@@ -732,96 +631,68 @@ for (let side of [-1, 1]) {
   for (let pz = -LAND_L/2; pz <= LAND_L/2; pz += 5)
     scene.add(box(0.3, RRAIL_H, 0.3, 0x509080, 1, rx, RRAIL_Y, pz));
 }
-// ── ROOFTOP RESTAURANT LAYOUT ────────────────────────────────
-// Split the rooftop into two halves along Z:
-//   +Z half: Kitchen + Reception (enclosed room)
-//   -Z half: Open dining area with shade pergola
-// Water tank lifted on support columns at +Z end, above kitchen roof
 
-const REST_Y   = roofY + 0.6;   // floor level on rooftop
-const ROOM_H   = 8.5;           // kitchen/reception room height
-const ROOM_L   = LAND_L * 0.42; // ~34ft long (takes up +Z half)
-const ROOM_W   = LAND_W - 10;   // ~35ft wide (leaving 5ft walkway on each side)
+const REST_Y   = roofY + 0.6;
+const ROOM_H   = 8.5;
+const ROOM_L   = LAND_L * 0.42;
+const ROOM_W   = LAND_W - 10;
 const ROOM_CX  = 0;
-const ROOM_CZ  = LAND_L/2 - ROOM_L/2 - 1; // center Z of room (~+27)
+const ROOM_CZ  = LAND_L/2 - ROOM_L/2 - 1;
 
-// ── KITCHEN + RECEPTION ROOM ─────────────────────────────────
-// Outer walls (sides + back with door opening — front wall is built with door opening below)
-// Back wall has a door opening (3ft wide × 7ft tall) for staircase access from +Z end
 const BACK_DOOR_W = 3, BACK_DOOR_H = 7;
 const backSegSide = (ROOM_W - BACK_DOOR_W) / 2;
-scene.add(box(backSegSide, ROOM_H, WALL_T, 0xd4c5a0, 0.92, -ROOM_W/2 + backSegSide/2,   REST_Y + ROOM_H/2,         ROOM_CZ + ROOM_L/2)); // back left
-scene.add(box(backSegSide, ROOM_H, WALL_T, 0xd4c5a0, 0.92,  ROOM_W/2 - backSegSide/2,   REST_Y + ROOM_H/2,         ROOM_CZ + ROOM_L/2)); // back right
-scene.add(box(BACK_DOOR_W, ROOM_H - BACK_DOOR_H, WALL_T, 0xd4c5a0, 0.92, 0, REST_Y + BACK_DOOR_H + (ROOM_H - BACK_DOOR_H)/2, ROOM_CZ + ROOM_L/2)); // back header
-scene.add(box(WALL_T, ROOM_H, ROOM_L, 0xd4c5a0, 0.92, -ROOM_W/2, REST_Y + ROOM_H/2, ROOM_CZ));           // left wall
-scene.add(box(WALL_T, ROOM_H, ROOM_L, 0xd4c5a0, 0.92,  ROOM_W/2, REST_Y + ROOM_H/2, ROOM_CZ));           // right wall
-// Roof slab over room
+scene.add(box(backSegSide, ROOM_H, WALL_T, 0xd4c5a0, 0.92, -ROOM_W/2 + backSegSide/2,   REST_Y + ROOM_H/2,         ROOM_CZ + ROOM_L/2));
+scene.add(box(backSegSide, ROOM_H, WALL_T, 0xd4c5a0, 0.92,  ROOM_W/2 - backSegSide/2,   REST_Y + ROOM_H/2,         ROOM_CZ + ROOM_L/2));
+scene.add(box(BACK_DOOR_W, ROOM_H - BACK_DOOR_H, WALL_T, 0xd4c5a0, 0.92, 0, REST_Y + BACK_DOOR_H + (ROOM_H - BACK_DOOR_H)/2, ROOM_CZ + ROOM_L/2));
+scene.add(box(WALL_T, ROOM_H, ROOM_L, 0xd4c5a0, 0.92, -ROOM_W/2, REST_Y + ROOM_H/2, ROOM_CZ));
+scene.add(box(WALL_T, ROOM_H, ROOM_L, 0xd4c5a0, 0.92,  ROOM_W/2, REST_Y + ROOM_H/2, ROOM_CZ));
 scene.add(box(ROOM_W + 1, 0.4, ROOM_L + 1, 0xbbaa88, 1, ROOM_CX, REST_Y + ROOM_H + 0.2, ROOM_CZ));
 
-// Door opening in front wall (centered, 3ft wide × 7ft tall)
-// — represented by splitting front wall into 3 segments
 const DOOR_W = 4, DOOR_H = 7;
 const segSide = (ROOM_W - DOOR_W) / 2;
 scene.add(box(segSide, ROOM_H, WALL_T, 0xd4c5a0, 0.92, -ROOM_W/2 + segSide/2,      REST_Y + ROOM_H/2,   ROOM_CZ - ROOM_L/2));
 scene.add(box(segSide, ROOM_H, WALL_T, 0xd4c5a0, 0.92,  ROOM_W/2 - segSide/2,      REST_Y + ROOM_H/2,   ROOM_CZ - ROOM_L/2));
 scene.add(box(DOOR_W,  ROOM_H - DOOR_H, WALL_T, 0xd4c5a0, 0.92, 0, REST_Y + DOOR_H + (ROOM_H-DOOR_H)/2, ROOM_CZ - ROOM_L/2));
-// Remove the full front wall added earlier (above replaces it)
 
-// Interior dividing wall: kitchen (back) | reception (front)
 const divZ = ROOM_CZ + ROOM_L * 0.1;
 scene.add(box(ROOM_W, ROOM_H, WALL_T, 0xc8b890, 0.7, ROOM_CX, REST_Y + ROOM_H/2, divZ));
 
-// Kitchen fixtures (back half)
-scene.add(box(ROOM_W - 4, 3.5, 2.5, 0x888888, 0.95, ROOM_CX, REST_Y + 1.75, ROOM_CZ + ROOM_L/2 - 2)); // counter
-scene.add(box(3, 3.5, 2.5, 0x606060, 0.95, -ROOM_W/2 + 3, REST_Y + 1.75, ROOM_CZ + ROOM_L/4));         // stove block
-scene.add(box(3, 3.5, 2.5, 0x606060, 0.95,  ROOM_W/2 - 3, REST_Y + 1.75, ROOM_CZ + ROOM_L/4));         // prep block
-// Kitchen window (gap in back wall — just a tinted panel)
+scene.add(box(ROOM_W - 4, 3.5, 2.5, 0x888888, 0.95, ROOM_CX, REST_Y + 1.75, ROOM_CZ + ROOM_L/2 - 2));
+scene.add(box(3, 3.5, 2.5, 0x606060, 0.95, -ROOM_W/2 + 3, REST_Y + 1.75, ROOM_CZ + ROOM_L/4));
+scene.add(box(3, 3.5, 2.5, 0x606060, 0.95,  ROOM_W/2 - 3, REST_Y + 1.75, ROOM_CZ + ROOM_L/4));
 scene.add(box(8, 4, 0.2, 0x88ccff, 0.3, ROOM_CX, REST_Y + 5, ROOM_CZ + ROOM_L/2));
 
-// Reception fixtures (front half)
-scene.add(box(10, 4, 2, 0x9a7755, 0.95, -4, REST_Y + 2, divZ - ROOM_L * 0.12));  // reception desk
-scene.add(box(1.5, 4.5, 1.5, 0x9a7755, 0.95, 3, REST_Y + 2.25, divZ - ROOM_L * 0.12)); // desk side
-// Waiting chairs
+scene.add(box(10, 4, 2, 0x9a7755, 0.95, -4, REST_Y + 2, divZ - ROOM_L * 0.12));
+scene.add(box(1.5, 4.5, 1.5, 0x9a7755, 0.95, 3, REST_Y + 2.25, divZ - ROOM_L * 0.12));
 for (let cx of [-8, -3, 3, 8]) {
   scene.add(box(2.5, 1.5, 2.5, 0x7a5535, 1, cx, REST_Y + 0.75, divZ - ROOM_L * 0.25));
   scene.add(box(2.5, 2.5, 0.4, 0x7a5535, 1, cx, REST_Y + 2.0,  divZ - ROOM_L * 0.25 - 1.0));
 }
-// Window on front wall (beside door)
 scene.add(box(5, 4, 0.2, 0x88ccff, 0.3, -ROOM_W/2 + segSide/2, REST_Y + 4.5, ROOM_CZ - ROOM_L/2));
 scene.add(box(5, 4, 0.2, 0x88ccff, 0.3,  ROOM_W/2 - segSide/2, REST_Y + 4.5, ROOM_CZ - ROOM_L/2));
 
-// ── OPEN DINING AREA (-Z half) ────────────────────────────────
-const DINE_CZ = -(LAND_L/2 - ROOM_L/2 - 1); // mirror of room center
+const DINE_CZ = -(LAND_L/2 - ROOM_L/2 - 1);
 
-// Pergola / shade structure — elegant columns + beams
 const PERG_H = 9;
 const pergCols = [-14, -7, 0, 7, 14];
 const pergRows = [DINE_CZ - 12, DINE_CZ + 4];
 for (let px of pergCols) {
   for (let pz of pergRows) {
-    // Column
     scene.add(box(0.6, PERG_H, 0.6, 0x8a7060, 1, px, REST_Y + PERG_H/2, pz));
-    // Capital detail
     scene.add(box(1.2, 0.6, 1.2, 0x9a8070, 1, px, REST_Y + PERG_H - 0.3, pz));
   }
 }
-// Pergola beams along Z
 for (let px of pergCols)
   scene.add(box(0.4, 0.4, Math.abs(pergRows[1]-pergRows[0]) + 1, 0x7a6050, 1, px, REST_Y + PERG_H, (pergRows[0]+pergRows[1])/2));
-// Pergola cross-beams along X
 for (let pz = pergRows[0]; pz <= pergRows[1] + 1; pz += 4)
   scene.add(box(pergCols[pergCols.length-1]*2 + 4, 0.3, 0.4, 0x7a6050, 0.8, 0, REST_Y + PERG_H + 0.2, pz));
-// Shade fabric (semi-transparent panels between beams)
 scene.add(box(pergCols[pergCols.length-1]*2 + 2, 0.15, Math.abs(pergRows[1]-pergRows[0]) + 0.5, 0xf0e8d0, 0.35, 0, REST_Y + PERG_H + 0.1, (pergRows[0]+pergRows[1])/2));
 
-// Dining tables with chairs
 const dineTableZ = [DINE_CZ - 8, DINE_CZ, DINE_CZ + 8];
 for (let tz of dineTableZ) {
   for (let tx of [-9, 0, 9]) {
-    // Table
     scene.add(box(4, 0.2, 4, 0x6a4f3a, 1, tx, REST_Y + 3.5, tz));
     scene.add(box(0.3, 3.3, 0.3, 0x5a3f2a, 1, tx, REST_Y + 1.75, tz));
-    // 4 chairs around table
     for (let [cx, cz] of [[tx-2.5,tz],[tx+2.5,tz],[tx,tz-2.5],[tx,tz+2.5]]) {
       scene.add(box(2, 1.2, 2, 0x8a6548, 1, cx, REST_Y + 0.6, cz));
       scene.add(box(2, 2.5, 0.3, 0x8a6548, 1, cx, REST_Y + 2.0, cz + (cz > tz ? 0.8 : cz < tz ? -0.8 : 0)));
@@ -829,13 +700,10 @@ for (let tz of dineTableZ) {
   }
 }
 
-// Small bar counter along the dividing line between dining and kitchen room
 scene.add(box(ROOM_W - 6, 4, 2.5, 0x6a4020, 0.95, 0, REST_Y + 2, ROOM_CZ - ROOM_L/2 - 3));
-// Bar stools
 for (let bx = -12; bx <= 12; bx += 4)
   scene.add(box(1.5, 3.5, 1.5, 0x4a3010, 1, bx, REST_Y + 1.75, ROOM_CZ - ROOM_L/2 - 5.5));
 
-// Planter boxes along rooftop perimeter (keep original style)
 for (let pz = -30; pz <= 30; pz += 12) {
   for (let side of [-1, 1]) {
     const px = side * (LAND_W/2 - 2.5);
@@ -844,35 +712,27 @@ for (let pz = -30; pz <= 30; pz += 12) {
   }
 }
 
-// ── ELEVATED WATER TANK on support columns ────────────────────
-// Sits above the kitchen room roof, raised on 4 columns
-const TANK_LIFT   = ROOM_H + 5;  // lift above rooftop floor
+const TANK_LIFT   = ROOM_H + 5;
 const TANK_W      = LAND_W * 0.28;
 const TANK_D      = LAND_L * 0.18;
 const TANK_H      = 5;
 const TANK_CX     = 0;
-const TANK_CZ     = ROOM_CZ + ROOM_L/2 - TANK_D/2 - 1; // above kitchen back
+const TANK_CZ     = ROOM_CZ + ROOM_L/2 - TANK_D/2 - 1;
 const COL_H       = TANK_LIFT - ROOM_H - 0.4;
 
-// Support columns (4 corners)
 for (let cx of [-TANK_W/2 + 1, TANK_W/2 - 1]) {
   for (let cz of [TANK_CZ - TANK_D/2 + 1, TANK_CZ + TANK_D/2 - 1]) {
     scene.add(box(1.2, COL_H, 1.2, 0x555555, 1, cx, REST_Y + ROOM_H + COL_H/2, cz));
   }
 }
-// Cross bracing
 scene.add(box(TANK_W - 2, 0.5, 0.5, 0x555555, 1, TANK_CX, REST_Y + ROOM_H + COL_H * 0.5, TANK_CZ - TANK_D/2 + 1));
 scene.add(box(TANK_W - 2, 0.5, 0.5, 0x555555, 1, TANK_CX, REST_Y + ROOM_H + COL_H * 0.5, TANK_CZ + TANK_D/2 - 1));
 scene.add(box(0.5, 0.5, TANK_D - 2, 0x555555, 1, -TANK_W/2 + 1, REST_Y + ROOM_H + COL_H * 0.5, TANK_CZ));
 scene.add(box(0.5, 0.5, TANK_D - 2, 0x555555, 1,  TANK_W/2 - 1, REST_Y + ROOM_H + COL_H * 0.5, TANK_CZ));
-// Tank body
 scene.add(box(TANK_W, TANK_H, TANK_D, 0x2a3a4a, 1, TANK_CX, REST_Y + TANK_LIFT + TANK_H/2, TANK_CZ));
-// Tank lid
 scene.add(box(TANK_W + 0.5, 0.6, TANK_D + 0.5, 0x1a2a3a, 1, TANK_CX, REST_Y + TANK_LIFT + TANK_H + 0.3, TANK_CZ));
-// Pipe down to building
 scene.add(box(0.4, COL_H + TANK_H, 0.4, 0x777777, 1, TANK_CX - TANK_W/3, REST_Y + ROOM_H + (COL_H + TANK_H)/2, TANK_CZ));
 
-// Dimension lines
 scene.add(box(LAND_W, 0.05, 0.15, 0xffff00, 0.5, 0, 0.5, -LAND_L/2 - STAIR_Z_DEPTH - 8, false));
 scene.add(box(0.15, 0.05, LAND_L, 0xffff00, 0.5, -LAND_W/2 - 5, 0.5, 0, false));
 
@@ -942,19 +802,19 @@ updateCamera();
 // UI CONTROLS
 // ============================================
 function showFloor(f) {
-  document.querySelectorAll('.control-group:nth-child(1) .btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#ui-panel .control-group:nth-child(2) .btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
   floors.forEach((g, i) => { g.visible = (f === 'all' || i === f); });
   stairGroup.visible = true;
 }
 function setTransparency(val) {
   wallOpacity = val;
-  document.querySelectorAll('.control-group:nth-child(2) .btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#ui-panel .control-group:nth-child(3) .btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
   allWalls.forEach(w => { w.material.opacity = val; w.material.transparent = val < 1; w.material.needsUpdate = true; });
 }
 function setView(view) {
-  document.querySelectorAll('.control-group:nth-child(3) .btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#ui-panel .control-group:nth-child(4) .btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
   target.set(0, 15, 0);
   switch(view) {
